@@ -1,0 +1,58 @@
+#!/bin/sh
+
+. ./pre-backup
+
+echo "backing up /home/alexn ..."
+
+# obtains a new access token and writes it to stdout
+refresh_access_token() {
+  curl -s \
+    --data-urlencode "client_id=$CLIENT_ID" \
+    --data-urlencode "client_secret=$CLIENT_SECRET" \
+    --data-urlencode "refresh_token=$REFRESH_TOKEN" \
+    --data-urlencode "grant_type=refresh_token" \
+    https://oauth2.googleapis.com/token | \
+  python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])"
+}
+
+tar -cpzf - \
+  --directory=/home/alexn \
+  --exclude=Downloads \
+  --exclude=web-repos \
+  --exclude=.cache \
+  --exclude=.stack \
+  --exclude=.vim \
+  --one-file-system \
+  . | \
+curl -v -s \
+  -X PATCH \
+  -H "Authorization: Bearer $(refresh_access_token)" \
+  -H "Content-Type: application/gzip" \
+  --data-binary "@-" \
+  "https://www.googleapis.com/upload/drive/v3/files/$FILE_ID?uploadType=media"
+
+# TODO: for some reason this happened when running from a directory other than home:
+#backing up /home/alexn ...
+#Traceback (most recent call last):
+#  File "<string>", line 1, in <module>
+#    File "/usr/lib/python3.5/json/__init__.py", line 268, in load
+#        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+#          File "/usr/lib/python3.5/json/__init__.py", line 319, in loads
+#              return _default_decoder.decode(s)
+#                File "/usr/lib/python3.5/json/decoder.py", line 339, in decode
+#                    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+#                      File "/usr/lib/python3.5/json/decoder.py", line 357, in raw_decode
+#                          raise JSONDecodeError("Expecting value", s, err.value) from None
+#                          json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+#                          * Could not resolve host: www.googleapis.com
+#                          * Closing connection 0
+
+# TODO: Will backup become corrupted if we write to a file while tar-ing?
+# TODO: Implement general error handling and integrity checking.
+#   - Ensure that failure codes are properly reported at each step of pipeline. Retry if pipeline fails.
+#   - After backup completes, attempt a restore. If it fails, retry backup.
+#   - A/B backups. Don't lose the previous backup in case of failure.
+#   - Log errors.
+#   - Send an email after N failed retries.
+# TODO: Include API key as a query parameter? Google's "Try it now" example does so, but this seems otherwise undocumented.
+#   Check API v2 docs.

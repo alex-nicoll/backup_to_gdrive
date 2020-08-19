@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export CLIENT_ID=
+export CLIENT_SECRET=
+export REFRESH_TOKEN=
+export FILE_ID=
