@@ -1,10 +1,8 @@
-This is a small utility that I use to periodically backup data in my crouton-managed chroot to Google Drive.
+This is a small utility that I used to periodically backup data in my crouton-managed chroot to Google Drive.
 
-# Installation instructions (WIP)
+## Installation
 
-Installation is a bit of a pain. Fortunately, you only have to do this once. 
-
-## Setup the backup script
+### Set up the backup script
 
 The idea is to register an identity with which to communicate with Google Drive, perform [OAuth](https://developers.google.com/identity/protocols/oauth2/native-app) by hand under this identity to get a refresh token, create a file on Google Drive, and then provide the identity, token, and file ID to the backup script.
 
@@ -42,9 +40,7 @@ The idea is to register an identity with which to communicate with Google Drive,
     }
     ```
 
-4.  **TODO: Remove this step. `backup` should search for file by known appProperty, if it exists update it, else create file with known appProperty.**
-
-    Modify and run this command:
+4.  Modify and run this command:
     ```
     echo stuff >> test.txt && \
     tar -cpzf - test.txt | \
@@ -71,15 +67,23 @@ The idea is to register an identity with which to communicate with Google Drive,
 
 5.  `backup` uses the `CLIENT_ID`, `CLIENT_SECRET`, `REFRESH_TOKEN`, and `FILE_ID` environment variables. You can create a script named `pre-backup` to set these (and run any other commands before backing up). `backup` will source this script before reading from any environment variables. See `pre-backup.sample`
 
-6.  Modify the tar command in `backup` as needed. **TODO: use environment variables instead**
+6.  Modify the tar command in `backup` as needed. 
 
-6.  `chmod +x backup`
+7.  `chmod +x backup`
 
-## Setup daily backups
+### Set up daily backups
 
 Create an anacron job to run `backup` daily.
+
+```
+1 0 heartbeat (date | cat && echo "anacron is running!") >> /home/alexn/cron.log
+1 0 backup    cd /home/alexn/web-repos/backup_to_gdrive && ./backup >> /home/alexn/cron.log 2>&1
+```
 
 Optionally create a cron job that runs anacron every 15 minutes or so. This may be useful if your computer sleeps a lot and rarely reboots.
 Anacron runs on boot, and at a set time each day as a cron job (on Ubuntu 16.04).
 The 15-minute job ensures that a backup occurs even if the computer slept through today's cron job and didn't reboot.
-**TODO: is there some way to be notified of waking? This would be a good time to run anacron.**
+
+```
+\*/10 * * * * root /usr/sbin/anacron -s && (date | cat && echo "starting anacron ...") >> /home/alexn/cron.log
+```
