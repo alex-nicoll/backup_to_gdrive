@@ -80,10 +80,10 @@ Create an anacron job to run `backup` daily.
 1 0 backup    cd /home/alexn/web-repos/backup_to_gdrive && ./backup >> /home/alexn/cron.log 2>&1
 ```
 
-Optionally create a cron job that runs anacron every 15 minutes or so. This may be useful if your computer sleeps a lot and rarely reboots.
+Optionally create a cron job that runs anacron every 10 minutes or so. This may be useful if your computer sleeps a lot and rarely reboots.
 Anacron runs on boot, and at a set time each day as a cron job (on Ubuntu 16.04).
-The 15-minute job ensures that a backup occurs even if the computer slept through today's cron job and didn't reboot.
+The 10-minute job ensures that a backup occurs even if the computer slept through today's cron job and didn't reboot.
 
 ```
-\*/10 * * * * root /usr/sbin/anacron -s && (date | cat && echo "starting anacron ...") >> /home/alexn/cron.log
+*/10 * * * * root /usr/sbin/anacron -s && (date | cat && echo "starting anacron ...") >> /home/alexn/cron.log
 ```
